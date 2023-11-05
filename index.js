@@ -9,7 +9,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = "mongodb+srv://jobbidder:TaLNqw3qBhoZD1Cy@cluster0.tdvw5wt.mongodb.net/?retryWrites=true&w=majority";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -32,6 +32,13 @@ async function run() {
     app.get('/jobs',async (req, res) =>{
         const result = await jobsCollection.find().toArray();
         res.send(result)
+    })
+
+    app.get('/jobs/:id', async (req, res)=>{
+        const id = req.params.id;
+        const cursor = {_id: new ObjectId(id)};
+        const result = await jobsCollection.findOne(cursor);
+        res.send(result);
     })
 
     // Send a ping to confirm a successful connection
