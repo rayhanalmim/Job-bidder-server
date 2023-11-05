@@ -29,12 +29,13 @@ async function run() {
 
 
     const jobsCollection = client.db("JobsBidderHub").collection("jobs");
+    const bidsCollection = client.db("JobsBidderHub").collection("bids");
 
     app.get('/jobs', async (req, res) => {
       const result = await jobsCollection.find().toArray();
       res.send(result)
     })
-    
+
     app.get('/jobs/:id', async (req, res) => {
       const id = req.params.id;
       const cursor = { _id: new ObjectId(id) };
@@ -44,8 +45,13 @@ async function run() {
 
     app.post('/jobs', async (req, res) => {
       const data = req.body;
-      console.log(data);
       const result = await jobsCollection.insertOne(data);
+      res.send(result);
+    })
+
+    app.post('/bids', async (req, res) => {
+      const data = req.body;
+      const result = await bidsCollection.insertOne(data);
       res.send(result);
     })
 
