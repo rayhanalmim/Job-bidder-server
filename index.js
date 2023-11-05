@@ -7,6 +7,7 @@ const port = process.env.PORT || 3000;
 // jobbidder
 
 app.use(cors());
+app.use(express.json());
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -29,17 +30,26 @@ async function run() {
 
     const jobsCollection = client.db("JobsBidderHub").collection("jobs");
 
-    app.get('/jobs',async (req, res) =>{
-        const result = await jobsCollection.find().toArray();
-        res.send(result)
+    app.get('/jobs', async (req, res) => {
+      const result = await jobsCollection.find().toArray();
+      res.send(result)
+    })
+    
+    app.get('/jobs/:id', async (req, res) => {
+      const id = req.params.id;
+      const cursor = { _id: new ObjectId(id) };
+      const result = await jobsCollection.findOne(cursor);
+      res.send(result);
     })
 
-    app.get('/jobs/:id', async (req, res)=>{
-        const id = req.params.id;
-        const cursor = {_id: new ObjectId(id)};
-        const result = await jobsCollection.findOne(cursor);
-        res.send(result);
+    app.post('/jobs', async (req, res) => {
+      const data = req.body;
+      console.log(data);
+      const result = await jobsCollection.insertOne(data);
+      res.send(result);
     })
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
@@ -53,9 +63,9 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-    res.send('jobbidder server is running')
-  })
-  
-  app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-  })
+  res.send('jobbidder server is running')
+})
+
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`)
+})
