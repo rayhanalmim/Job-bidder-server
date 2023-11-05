@@ -43,12 +43,19 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/edit/:id', async (req, res) => {
+      const id = req.params.id;
+      const cursor = { _id: new ObjectId(id) };
+      const result = await jobsCollection.findOne(cursor);
+      res.send(result);
+    })
+
     app.get('/myjobs', async (req, res) => {
       console.log(req.query.email);
 
       let query = {};
       if (req.query?.email) {
-          query = { email: req.query.email }
+        query = { email: req.query.email }
       }
       const result = await jobsCollection.find(query).toArray();
       res.send(result);
@@ -65,6 +72,36 @@ async function run() {
       const result = await bidsCollection.insertOne(data);
       res.send(result);
     })
+
+    app.put('/edit/:id', async (req, res) => {
+      const jobs = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      console.log("jobs and id : ", jobs, id)
+      const updateDoc = {
+        $set: {
+          email : jobs.email,
+          category : jobs.category,
+          jobTitle : jobs.jobTitle,
+          deadline : jobs.deadline,
+          maxPrice : jobs.maxPrice,
+          minPrice : jobs.minPrice,
+          description : jobs.description,
+          shortDescription : jobs.shortDescription,
+        },
+      };
+      const result = await jobsCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    })
+
+    app.delete('/delete/:id', async(req, res)=>{
+      console.log('jello')
+      const id = req.params.id;
+      const jobs = { _id: new ObjectId(id) };
+      const result = await jobsCollection.deleteOne(jobs);
+      res.send(result);
+  })
 
 
 
