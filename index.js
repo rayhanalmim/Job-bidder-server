@@ -117,6 +117,21 @@ async function run() {
       res.send(result);
     })
 
+    app.put('/status/:id', async (req, res) => {
+      const status = req.body;
+      const id = req.params.id;
+      const filter = { _id: id };
+      const options = { upsert: true };
+      console.log("status and id : ", status, id)
+      const updateDoc = {
+        $set: {
+          status : status.status,
+        },
+      };
+      const result = await bidsCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    })
+
     app.delete('/delete/:id', async(req, res)=>{
       console.log('jello')
       const id = req.params.id;
