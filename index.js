@@ -71,6 +71,24 @@ async function run() {
       const result = await bidsCollection.find(query).toArray();
       res.send(result);
     })
+    // -----------------------------sort--------------------------
+    app.get('/sortedmybids', async (req, res) => {
+      console.log(req.query.email);
+      console.log(req.query.sortby)
+      const sortby = req.query.sortby;
+
+      let query = {};
+      if (req.query?.email) {
+        query = { clintEmail: req.query.email }
+      }
+      const data = await bidsCollection.find(query).toArray();
+      const sortedData = data.sort((a, b) => {
+            if (a.status === sortby) return -1;
+            if (b.status === sortby) return 1;
+            return 0;
+        });
+      res.send(sortedData);
+    })
 
     app.get('/bidsreq', async (req, res) => {
       console.log(req.query.email);
@@ -122,7 +140,6 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: id };
       const options = { upsert: true };
-      console.log("status and id : ", status, id)
       const updateDoc = {
         $set: {
           status : status.status,
@@ -137,7 +154,20 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: id };
       const options = { upsert: true };
-      console.log("status and id : ", status, id)
+      const updateDoc = {
+        $set: {
+          status : status.status,
+        },
+      };
+      const result = await bidsCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    })
+
+    app.put('/complite/:id', async (req, res) => {
+      const status = req.body;
+      const id = req.params.id;
+      const filter = { _id: id };
+      const options = { upsert: true };
       const updateDoc = {
         $set: {
           status : status.status,
