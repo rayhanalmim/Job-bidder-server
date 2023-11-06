@@ -1,17 +1,29 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+require('dotenv').config()
 const port = process.env.PORT || 3000;
 
 // TaLNqw3qBhoZD1Cy
 // jobbidder
 
-app.use(cors());
+console.log(process.env.SECRET);
+console.log(process.env.ID);
+console.log(process.env.PASS);
+
+
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
+app.use(cookieParser());
 app.use(express.json());
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const uri = "mongodb+srv://jobbidder:TaLNqw3qBhoZD1Cy@cluster0.tdvw5wt.mongodb.net/?retryWrites=true&w=majority";
+const uri = `mongodb+srv://${process.env.ID}:${process.env.PASS}@cluster0.tdvw5wt.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -31,6 +43,26 @@ async function run() {
     const jobsCollection = client.db("JobsBidderHub").collection("jobs");
     const bidsCollection = client.db("JobsBidderHub").collection("bids");
 
+    // --------------------------jwt-----------------------------------
+    app.post('/jwt', async (req, res) => {
+      const user = req.body;
+      console.log(user);
+
+      const token = jwt.sign(user, process.env.SECRET, {
+          expiresIn: '1h'
+      });
+
+      res
+          .cookie('token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'none',
+          })
+          .send({ success: true })
+  })
+
+    // -------------------other_api------------------------------
+
     app.get('/jobs', async (req, res) => {
       const result = await jobsCollection.find().toArray();
       res.send(result)
@@ -43,7 +75,7 @@ async function run() {
       res.send(result);
     })
 
-    
+
 
     app.get('/edit/:id', async (req, res) => {
       const id = req.params.id;
