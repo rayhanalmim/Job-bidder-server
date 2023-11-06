@@ -6,8 +6,6 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config()
 const port = process.env.PORT || 3000;
 
-// TaLNqw3qBhoZD1Cy
-// jobbidder
 
 console.log(process.env.SECRET);
 console.log(process.env.ID);
@@ -43,23 +41,45 @@ async function run() {
     const jobsCollection = client.db("JobsBidderHub").collection("jobs");
     const bidsCollection = client.db("JobsBidderHub").collection("bids");
 
+    // ------------------------middleWare----------------------------
+
+    const verifyToken = async (req, res, next) => {
+      const token = req.cookies?.token;
+      console.log(token);
+      if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
+      }
+      jwt.verify(token, process.env.SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: 'unauthorized access' })
+        }
+        req.user = decoded;
+        next();
+      })
+    }
+
     // --------------------------jwt-----------------------------------
     app.post('/jwt', async (req, res) => {
       const user = req.body;
       console.log(user);
 
       const token = jwt.sign(user, process.env.SECRET, {
-          expiresIn: '1h'
+        expiresIn: '1h'
       });
 
       res
-          .cookie('token', token, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-          })
-          .send({ success: true })
-  })
+        .cookie('token', token, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none',
+        })
+        .send({ success: true })
+    })
+
+    app.post('/logout', async (req, res) => {
+      const user = req.body;
+      res.clearCookie('token', { maxAge: 0 }).send({ success: true });
+    })
 
     // -------------------other_api------------------------------
 
@@ -84,7 +104,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/myjobs', async (req, res) => {
+    app.get('/myjobs',verifyToken, async (req, res) => {
       console.log(req.query.email);
 
       let query = {};
@@ -95,7 +115,7 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/mybids', async (req, res) => {
+    app.get('/mybids', verifyToken, async (req, res) => {
       console.log(req.query.email);
 
       let query = {};
@@ -106,7 +126,7 @@ async function run() {
       res.send(result);
     })
     // -----------------------------sort--------------------------
-    app.get('/sortedmybids', async (req, res) => {
+    app.get('/sortedmybids',verifyToken, async (req, res) => {
       console.log(req.query.email);
       console.log(req.query.sortby)
       const sortby = req.query.sortby;
@@ -117,14 +137,14 @@ async function run() {
       }
       const data = await bidsCollection.find(query).toArray();
       const sortedData = data.sort((a, b) => {
-            if (a.status === sortby) return -1;
-            if (b.status === sortby) return 1;
-            return 0;
-        });
+        if (a.status === sortby) return -1;
+        if (b.status === sortby) return 1;
+        return 0;
+      });
       res.send(sortedData);
     })
 
-    app.get('/bidsreq', async (req, res) => {
+    app.get('/bidsreq', verifyToken, async (req, res) => {
       console.log(req.query.email);
 
       let query = {};
@@ -155,14 +175,14 @@ async function run() {
       console.log("jobs and id : ", jobs, id)
       const updateDoc = {
         $set: {
-          email : jobs.email,
-          category : jobs.category,
-          jobTitle : jobs.jobTitle,
-          deadline : jobs.deadline,
-          maxPrice : jobs.maxPrice,
-          minPrice : jobs.minPrice,
-          description : jobs.description,
-          shortDescription : jobs.shortDescription,
+          email: jobs.email,
+          category: jobs.category,
+          jobTitle: jobs.jobTitle,
+          deadline: jobs.deadline,
+          maxPrice: jobs.maxPrice,
+          minPrice: jobs.minPrice,
+          description: jobs.description,
+          shortDescription: jobs.shortDescription,
         },
       };
       const result = await jobsCollection.updateOne(filter, updateDoc, options);
@@ -176,7 +196,7 @@ async function run() {
       const options = { upsert: true };
       const updateDoc = {
         $set: {
-          status : status.status,
+          status: status.status,
         },
       };
       const result = await bidsCollection.updateOne(filter, updateDoc, options);
@@ -190,7 +210,7 @@ async function run() {
       const options = { upsert: true };
       const updateDoc = {
         $set: {
-          status : status.status,
+          status: status.status,
         },
       };
       const result = await bidsCollection.updateOne(filter, updateDoc, options);
@@ -204,20 +224,20 @@ async function run() {
       const options = { upsert: true };
       const updateDoc = {
         $set: {
-          status : status.status,
+          status: status.status,
         },
       };
       const result = await bidsCollection.updateOne(filter, updateDoc, options);
       res.send(result);
     })
 
-    app.delete('/delete/:id', async(req, res)=>{
+    app.delete('/delete/:id', async (req, res) => {
       console.log('jello')
       const id = req.params.id;
       const jobs = { _id: new ObjectId(id) };
       const result = await jobsCollection.deleteOne(jobs);
       res.send(result);
-  })
+    })
 
 
 
